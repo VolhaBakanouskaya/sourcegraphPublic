@@ -13,7 +13,7 @@ export class NonStop implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const controllers = context.editor.controllers
-        const selection = context.editor.getActiveTextEditorSelection()
+        const selection = await context.editor.getActiveTextEditorSelection()
 
         // TODO: Make this work with unsaved documents
         // TODO: Do not require any text to be selected

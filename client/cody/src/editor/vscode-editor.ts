@@ -21,11 +21,11 @@ export class VSCodeEditor implements Editor {
         }
     ) {}
 
-    public get fileName(): string {
-        return vscode.window.activeTextEditor?.document.fileName ?? ''
+    public get fileName(): Promise<string> {
+        return Promise.resolve(vscode.window.activeTextEditor?.document.fileName ?? '')
     }
 
-    public getWorkspaceRootPath(): string | null {
+    public async getWorkspaceRootPath(): Promise<string | null> {
         const uri = vscode.window.activeTextEditor?.document?.uri
         if (uri) {
             const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
@@ -36,7 +36,7 @@ export class VSCodeEditor implements Editor {
         return vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath ?? null
     }
 
-    public getActiveTextEditor(): ActiveTextEditor | null {
+    public async getActiveTextEditor(): Promise<ActiveTextEditor | null> {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
@@ -51,7 +51,7 @@ export class VSCodeEditor implements Editor {
         return activeEditor && activeEditor.document.uri.scheme === 'file' ? activeEditor : null
     }
 
-    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+    public async getActiveTextEditorSelection(): Promise<ActiveTextEditorSelection | null> {
         if (this.controllers.inline.isInProgress) {
             return null
         }
@@ -66,7 +66,7 @@ export class VSCodeEditor implements Editor {
         return this.createActiveTextEditorSelection(activeEditor, selection)
     }
 
-    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+    public async getActiveTextEditorSelectionOrEntireFile(): Promise<ActiveTextEditorSelection | null> {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
@@ -100,7 +100,7 @@ export class VSCodeEditor implements Editor {
         }
     }
 
-    public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+    public async getActiveTextEditorVisibleContent(): Promise<ActiveTextEditorVisibleContent | null> {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
@@ -157,8 +157,8 @@ export class VSCodeEditor implements Editor {
         return
     }
 
-    public async showQuickPick(labels: string[]): Promise<string | undefined> {
-        const label = await vscode.window.showQuickPick(labels)
+    public async showQuickPick(labels: string[]): Promise<string | null> {
+        const label = (await vscode.window.showQuickPick(labels)) ?? null
         return label
     }
 
@@ -166,10 +166,12 @@ export class VSCodeEditor implements Editor {
         await vscode.window.showWarningMessage(message)
     }
 
-    public async showInputBox(prompt?: string): Promise<string | undefined> {
-        return vscode.window.showInputBox({
-            placeHolder: prompt || 'Enter here...',
-        })
+    public async showInputBox(prompt?: string): Promise<string | null> {
+        return (
+            (await vscode.window.showInputBox({
+                placeHolder: prompt || 'Enter here...',
+            })) ?? null
+        )
     }
 
     // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
