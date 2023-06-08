@@ -152,7 +152,7 @@ export const vsCodeMocks = {
             return null
         },
         showErrorMessage(message: string) {
-            throw new Error(message)
+            console.error(message)
         },
         activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
         onDidChangeActiveTextEditor() {},
