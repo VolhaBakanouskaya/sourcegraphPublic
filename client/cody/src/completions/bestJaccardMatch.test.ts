@@ -1,4 +1,4 @@
-import { bestJaccardMatch, getWords } from './context'
+import { bestJaccardMatch, getWords } from './bestJaccardMatch'
 
 const targetSnippet = `
 import { bestJaccardMatch, getWords } from './context'
