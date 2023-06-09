@@ -1,5 +1,7 @@
 import path from 'path'
 
+import { differenceInMinutes } from 'date-fns'
+import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
@@ -29,8 +31,47 @@ interface GetContextOptions {
 }
 
 export async function getContext(options: GetContextOptions): Promise<ReferenceSnippet[]> {
-    // TODO(valery): use codebaseContext here.
-    const { currentEditor, history, targetText, windowSize, maxChars } = options
+    const { maxChars } = options
+
+    const embeddingsMatches = getContextFromEmbeddings(options)
+    const editorMatches = await getContextFromCurrentEditor(options)
+
+    const uniqueMatchesPerFileName = new Map<string, ReferenceSnippet>()
+    for (const match of [...embeddingsMatches, ...editorMatches]) {
+        const existingMatch = uniqueMatchesPerFileName.get(match.fileName)
+        if (!existingMatch) {
+            uniqueMatchesPerFileName.set(match.fileName, match)
+        }
+    }
+
+    // TODO: filter embeddings matches by the current programming language.
+    console.log(
+        JSON.stringify(
+            {
+                embeddingsMatches: embeddingsMatches.map(x => x.fileName),
+                editorMatches: editorMatches.map(x => x.fileName),
+                matches: [...uniqueMatchesPerFileName.values()].map(x => x.fileName),
+            },
+            null,
+            2
+        )
+    )
+
+    const context: ReferenceSnippet[] = []
+    let totalChars = 0
+    for (const match of uniqueMatchesPerFileName.values()) {
+        if (totalChars + match.content.length > maxChars) {
+            break
+        }
+        context.push(match)
+        totalChars += match.content.length
+    }
+
+    return context
+}
+
+async function getContextFromCurrentEditor(options: GetContextOptions): Promise<ReferenceSnippet[]> {
+    const { currentEditor, history, targetText, windowSize } = options
     const files = await getRelevantFiles(currentEditor, history)
 
     const matches: JaccardMatchWithFilename[] = []
@@ -50,17 +91,73 @@ export async function getContext(options: GetContextOptions): Promise<ReferenceS
 
     matches.sort((a, b) => b.score - a.score)
 
-    const context: ReferenceSnippet[] = []
-    let totalChars = 0
-    for (const match of matches) {
-        if (totalChars + match.content.length > maxChars) {
-            break
-        }
-        context.push(match)
-        totalChars += match.content.length
+    return matches
+}
+
+interface GetContextFromEmbeddingsOptions {
+    currentEditor: vscode.TextEditor
+    targetText: string
+    codebaseContext: CodebaseContext
+}
+
+interface EmbeddingsForFile {
+    embeddings: ReferenceSnippet[]
+    lastChange: Date
+}
+
+const embeddingsPerFile = new LRUCache<string, EmbeddingsForFile>({
+    max: 10,
+})
+
+function getContextFromEmbeddings(options: GetContextFromEmbeddingsOptions): ReferenceSnippet[] {
+    const { currentEditor, codebaseContext } = options
+    const currentFilePath = path.normalize(currentEditor.document.fileName)
+    const fullText = currentEditor.document.getText()
+
+    const embeddingsForCurrentFile = embeddingsPerFile.get(currentFilePath)
+
+    // Fetch embeddings if we don't have any or if the last fetch was more than 5 minutes ago.
+    // Ideally, we should fetch embeddings in the background if file significantly changed.
+    // We can use the `onDidChangeTextDocument` event with some diffing logic for that in the improved version.
+    if (!embeddingsForCurrentFile || differenceInMinutes(embeddingsForCurrentFile.lastChange, new Date()) > 5) {
+        fetchAndSaveEmbeddings({
+            currentFilePath,
+            targetText: fullText,
+            codebaseContext,
+        })
     }
 
-    return context
+    // Return embeddings for current file if we have any in the cache.
+    return embeddingsForCurrentFile?.embeddings || []
+}
+
+interface FetchEmbeddingsOptions {
+    currentFilePath: string
+    targetText: string
+    codebaseContext: CodebaseContext
+}
+
+async function fetchAndSaveEmbeddings(options: FetchEmbeddingsOptions): Promise<void> {
+    const { currentFilePath, targetText, codebaseContext } = options
+
+    // TODO: crop the source file if it's too large
+    // TODO: how big are the embedding results?
+    // TODO: what's the price for embedding a file to run embeddings search?
+    const { results } = await codebaseContext.getSearchResults(targetText, {
+        numCodeResults: 2,
+        numTextResults: 1,
+    })
+
+    const embeddingResultsWithoutCurrentFile = results
+        .map(result => {
+            return {
+                ...result,
+                fileName: path.normalize(result.fileName),
+            }
+        })
+        .filter(result => !currentFilePath.endsWith(result.fileName))
+
+    embeddingsPerFile.set(currentFilePath, { embeddings: embeddingResultsWithoutCurrentFile, lastChange: new Date() })
 }
 
 interface FileContents {

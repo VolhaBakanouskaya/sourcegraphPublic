@@ -148,6 +148,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const remainingChars = this.tokToChar(this.promptTokens)
 
+        // TODO(valery): do we create an InlineCompletionProvider here only to get the empty prompt?
         const completionNoSnippets = new InlineCompletionProvider(
             this.completionsClient,
             remainingChars,
