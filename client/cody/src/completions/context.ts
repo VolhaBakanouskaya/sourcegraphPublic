@@ -107,7 +107,6 @@ async function getRelevantFiles(currentEditor: vscode.TextEditor, history: Histo
     }
 
     const documents = vscode.workspace.textDocuments
-    console.log(documents.map(d => d.fileName))
     for (const document of documents) {
         if (document.fileName.endsWith('.git')) {
             // The VS Code API returns fils with the .git suffix for every open file
