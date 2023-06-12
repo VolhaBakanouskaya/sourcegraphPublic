@@ -1,10 +1,5 @@
-import * as util from 'util'
-
-import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
-import { getRecipe, registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
-import { RecipeContext } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import {
     ActiveTextEditor,
     ActiveTextEditorSelection,
@@ -15,7 +10,8 @@ import {
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { MessageHandler, StaticEditor, StaticRecipeContext } from './rpc'
+import { StaticEditor } from './protocol'
+import { MessageHandler } from './rpc'
 
 export class AgentIntentDetector implements IntentDetector {
     constructor(private agent: Agent) {}
@@ -33,6 +29,10 @@ export class AgentEditor implements Editor {
     controllers?: ActiveTextEditorViewControllers | undefined
 
     constructor(private agent: Agent, private staticEditor: StaticEditor) {}
+
+    didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        throw new Error('Method not implemented.')
+    }
 
     async getWorkspaceRootPath(): Promise<string | null> {
         return this.staticEditor.workspaceRoot
@@ -91,7 +91,7 @@ export class Agent extends MessageHandler {
             config: {
                 customHeaders: {},
                 accessToken: process.env.SRC_ACCESS_TOKEN!,
-                serverEndpoint: 'https://sourcegraph.sourcegraph.com',
+                serverEndpoint: process.env.SRC_ENDPOINT || 'https://sourcegraph.sourcegraph.com',
                 useContext: 'none',
             },
             async setMessageInProgress(messageInProgress) {

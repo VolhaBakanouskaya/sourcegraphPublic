@@ -53,7 +53,7 @@ export interface Editor {
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | null>
     showWarningMessage(message: string): Promise<void>
-    showInputBox(prompt?: string): Promise<string | undefined>
+    showInputBox(prompt?: string): Promise<string | null>
 
     // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
     // move the recipe to client/cody and remove this entrypoint.

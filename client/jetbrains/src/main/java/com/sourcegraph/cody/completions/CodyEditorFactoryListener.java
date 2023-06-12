@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.sourcegraph.agent.CodyAgent;
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,9 +27,21 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
   CodySelectionListener selectionListener = new CodySelectionListener();
   CaretListener caretListener = new CodyCaretListener();
 
+  private static void onEditorChanged(Editor editor) {
+    if (CodyAgent.isConnected()) {
+      CodyAgent.getClient().editor = editor;
+    }
+  }
+
+  public CodyEditorFactoryListener() {
+    // TODO: start the agent somewhere else, for example based on application lifecycle events
+    ApplicationManager.getApplication().invokeLater(CodyAgent::run);
+  }
+
   @Override
   public void editorCreated(@NotNull EditorFactoryEvent event) {
     Editor editor = event.getEditor();
+    onEditorChanged(editor);
     Project project = editor.getProject();
     if (project == null || project.isDisposed()) {
       return;
@@ -44,6 +57,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
 
     @Override
     public void caretPositionChanged(@NotNull CaretEvent e) {
+      onEditorChanged(e.getEditor());
       CodyCompletionsManager suggestions = CodyCompletionsManager.getInstance();
       if (suggestions.isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
@@ -58,6 +72,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     public void selectionChanged(@NotNull SelectionEvent e) {
       if (CodyCompletionsManager.getInstance().isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
+        onEditorChanged(e.getEditor());
         ApplicationManager.getApplication()
             .getService(CodyCompletionsManager.class)
             .clearCompletions(e.getEditor());
@@ -80,6 +95,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       completions.clearCompletions(this.editor);
       if (completions.isEnabledForEditor(this.editor)
           && !CommandProcessor.getInstance().isUndoTransparentActionInProgress()) {
+        onEditorChanged(this.editor);
         int changeOffset = event.getOffset() + event.getNewLength();
         if (this.editor.getCaretModel().getOffset() == changeOffset) {
           InlineCompletionTriggerKind requestType =

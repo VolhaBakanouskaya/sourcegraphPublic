@@ -56,6 +56,7 @@ export async function createClient({
     initialTranscript,
     CompletionsClient = SourcegraphBrowserCompletionsClient,
 }: ClientInit): Promise<Client> {
+    process.stderr.write(JSON.stringify(config))
     const fullConfig = { debugEnable: false, ...config }
 
     const completionsClient = new CompletionsClient(fullConfig)
