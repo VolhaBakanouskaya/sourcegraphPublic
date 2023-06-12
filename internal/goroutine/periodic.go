@@ -29,7 +29,7 @@ type PeriodicGoroutine struct {
 	jobName           string
 	recorder          *recorder.Recorder
 	getInterval       getIntervalFunc
-	initialDelay	  time.Duration
+	initialDelay      time.Duration
 	getConcurrency    getConcurrencyFunc
 	handler           unifiedHandler
 	operation         *observation.Operation
@@ -296,18 +296,18 @@ func (r *PeriodicGoroutine) runHandlerPeriodically(monitorCtx context.Context) {
 	}()
 
 	select {
-		// Sleep - might be a zero-duration value if we're immediately reinvoking,
-		// but this gives us a nice chance to check the context to see if we should
-		// exit naturally.
-		case <-r.clock.After(r.initialDelay):
+	// Sleep - might be a zero-duration value if we're immediately reinvoking,
+	// but this gives us a nice chance to check the context to see if we should
+	// exit naturally.
+	case <-r.clock.After(r.initialDelay):
 
-		case <-r.ctx.Done():
-			// Goroutine is shutting down
-			return
+	case <-r.ctx.Done():
+		// Goroutine is shutting down
+		return
 
-		case <-monitorCtx.Done():
-			// Caller is requesting we return to resize the pool
-			return
+	case <-monitorCtx.Done():
+		// Caller is requesting we return to resize the pool
+		return
 	}
 
 	for {
