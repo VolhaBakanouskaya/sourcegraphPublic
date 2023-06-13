@@ -16,6 +16,12 @@ type Progress struct {
 	Total       int
 }
 
+type CoverageCounts struct {
+	NumTargets   int
+	NumExported  int
+	NumUnindexed int
+}
+
 type RankingDefinitions struct {
 	UploadID         int
 	ExportedUploadID int

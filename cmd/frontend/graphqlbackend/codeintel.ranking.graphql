@@ -30,6 +30,21 @@ type GlobalRankingSummary {
     The time that the next ranking job is configured to begin.
     """
     nextJobStartsAt: DateTime
+
+    """
+    TODO
+    """
+    numExported: Int!
+
+    """
+    TODO
+    """
+    numTargets: Int!
+
+    """
+    TODO
+    """
+    numUnindexed: Int!
 }
 
 """

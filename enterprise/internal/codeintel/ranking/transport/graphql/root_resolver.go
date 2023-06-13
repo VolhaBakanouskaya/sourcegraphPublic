@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -58,9 +59,16 @@ func (r *rootResolver) RankingSummary(ctx context.Context) (_ resolverstubs.Glob
 		nextJobStartsAt = &t
 	}
 
+	graphKey := rankingshared.GraphKey()
+	counts, err := r.rankingSvc.CoverageCounts(ctx, graphKey)
+	if err != nil {
+		return nil, err
+	}
+
 	return &globalRankingSummaryResolver{
 		resolvers:       resolvers,
 		nextJobStartsAt: nextJobStartsAt,
+		counts:          counts,
 	}, nil
 }
 
@@ -91,6 +99,7 @@ func (r *rootResolver) DeleteRankingProgress(ctx context.Context, args *resolver
 type globalRankingSummaryResolver struct {
 	resolvers       []resolverstubs.RankingSummaryResolver
 	nextJobStartsAt *time.Time
+	counts          shared.CoverageCounts
 }
 
 func (r *globalRankingSummaryResolver) RankingSummary() []resolverstubs.RankingSummaryResolver {
@@ -100,6 +109,10 @@ func (r *globalRankingSummaryResolver) RankingSummary() []resolverstubs.RankingS
 func (r *globalRankingSummaryResolver) NextJobStartsAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.nextJobStartsAt)
 }
+
+func (r *globalRankingSummaryResolver) NumExported() int32  { return int32(r.counts.NumExported) }
+func (r *globalRankingSummaryResolver) NumTargets() int32   { return int32(r.counts.NumTargets) }
+func (r *globalRankingSummaryResolver) NumUnindexed() int32 { return int32(r.counts.NumUnindexed) }
 
 type rankingSummaryResolver struct {
 	summary shared.Summary

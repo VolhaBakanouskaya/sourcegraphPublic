@@ -19,6 +19,9 @@ type DeleteRankingProgressArgs struct {
 type GlobalRankingSummaryResolver interface {
 	RankingSummary() []RankingSummaryResolver
 	NextJobStartsAt() *gqlutil.DateTime
+	NumExported() int32
+	NumTargets() int32
+	NumUnindexed() int32
 }
 
 type RankingSummaryResolver interface {
