@@ -25,25 +25,25 @@ export class VSCodeEditor implements Editor {
         return Promise.resolve(vscode.window.activeTextEditor?.document.fileName ?? '')
     }
 
-    public async getWorkspaceRootPath(): Promise<string | null> {
+    public getWorkspaceRootPath(): Promise<string | null> {
         const uri = vscode.window.activeTextEditor?.document?.uri
         if (uri) {
             const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
             if (wsFolder) {
-                return wsFolder.uri.fsPath
+                return Promise.resolve(wsFolder.uri.fsPath)
             }
         }
-        return vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath ?? null
+        return Promise.resolve(vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath ?? null)
     }
 
-    public async getActiveTextEditor(): Promise<ActiveTextEditor | null> {
+    public getActiveTextEditor(): Promise<ActiveTextEditor | null> {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
-            return null
+            return Promise.resolve(null)
         }
         const documentUri = activeEditor.document.uri
         const documentText = activeEditor.document.getText()
-        return { content: documentText, filePath: documentUri.fsPath }
+        return Promise.resolve({ content: documentText, filePath: documentUri.fsPath })
     }
 
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
@@ -51,31 +51,31 @@ export class VSCodeEditor implements Editor {
         return activeEditor && activeEditor.document.uri.scheme === 'file' ? activeEditor : null
     }
 
-    public async getActiveTextEditorSelection(): Promise<ActiveTextEditorSelection | null> {
+    public getActiveTextEditorSelection(): Promise<ActiveTextEditorSelection | null> {
         if (this.controllers.inline.isInProgress) {
-            return null
+            return Promise.resolve(null)
         }
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
-            return null
+            return Promise.resolve(null)
         }
         const selection = activeEditor.selection
         if (!selection || selection?.start.isEqual(selection.end)) {
-            return null
+            return Promise.resolve(null)
         }
-        return this.createActiveTextEditorSelection(activeEditor, selection)
+        return Promise.resolve(this.createActiveTextEditorSelection(activeEditor, selection))
     }
 
-    public async getActiveTextEditorSelectionOrEntireFile(): Promise<ActiveTextEditorSelection | null> {
+    public getActiveTextEditorSelectionOrEntireFile(): Promise<ActiveTextEditorSelection | null> {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
-            return null
+            return Promise.resolve(null)
         }
         let selection = activeEditor.selection
         if (!selection || selection.isEmpty) {
             selection = new vscode.Selection(0, 0, activeEditor.document.lineCount, 0)
         }
-        return this.createActiveTextEditorSelection(activeEditor, selection)
+        return Promise.resolve(this.createActiveTextEditorSelection(activeEditor, selection))
     }
 
     private createActiveTextEditorSelection(
@@ -100,15 +100,15 @@ export class VSCodeEditor implements Editor {
         }
     }
 
-    public async getActiveTextEditorVisibleContent(): Promise<ActiveTextEditorVisibleContent | null> {
+    public getActiveTextEditorVisibleContent(): Promise<ActiveTextEditorVisibleContent | null> {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
-            return null
+            return Promise.resolve(null)
         }
 
         const visibleRanges = activeEditor.visibleRanges
         if (visibleRanges.length === 0) {
-            return null
+            return Promise.resolve(null)
         }
 
         const visibleRange = visibleRanges[0]
@@ -119,10 +119,10 @@ export class VSCodeEditor implements Editor {
             )
         )
 
-        return {
+        return Promise.resolve({
             fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
             content,
-        }
+        })
     }
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {

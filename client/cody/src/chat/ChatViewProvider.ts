@@ -181,7 +181,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'initialized':
                 debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
                 this.loadChatHistory()
-                this.publishContextStatus()
+                await this.publishContextStatus()
                 this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
@@ -394,7 +394,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
 
         this.codebaseContext = codebaseContext
-        this.publishContextStatus()
+        await this.publishContextStatus()
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
@@ -644,7 +644,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Publish the current context status to the webview.
      */
-    private publishContextStatus(): void {
+    private async publishContextStatus(): Promise<void> {
         const send = async (): Promise<void> => {
             const editorContext = await this.editor.getActiveTextEditor()
             void this.webview?.postMessage({
@@ -658,8 +658,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 },
             })
         }
-        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
-        send()
+        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(async () => await send()))
+        return send()
     }
 
     /**
