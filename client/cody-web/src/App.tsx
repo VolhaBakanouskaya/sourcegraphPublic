@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Client, Transcript, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import { CodySvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -16,33 +17,33 @@ import styles from './App.module.css'
 /* eslint-disable @typescript-eslint/require-await */
 const editor: Editor = {
     getActiveTextEditor() {
-        return null
+        return Promise.resolve(null)
     },
     getActiveTextEditorSelection() {
-        return null
+        return Promise.resolve(null)
     },
     getActiveTextEditorSelectionOrEntireFile() {
-        return null
+        return Promise.resolve(null)
     },
     getActiveTextEditorVisibleContent() {
-        return null
+        return Promise.resolve(null)
     },
     getWorkspaceRootPath() {
-        return null
+        return Promise.resolve(null)
     },
     replaceSelection(_fileName, _selectedText, _replacement) {
         return Promise.resolve()
     },
     async showQuickPick(labels) {
         // TODO: Use a proper UI element
-        return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined
+        return Promise.resolve(window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || null)
     },
     async showWarningMessage(message) {
         console.warn(message)
     },
     async showInputBox(prompt?: string) {
         // TODO: Use a proper UI element
-        return window.prompt(prompt || 'Enter here...') || undefined
+        return Promise.resolve(window.prompt(prompt || 'Enter here...') || null)
     },
     didReceiveFixupText(_id: string, _text: string, _state: 'streaming' | 'complete'): Promise<void> {
         return Promise.resolve()
@@ -66,6 +67,7 @@ export const App: React.FunctionComponent = () => {
             setMessageInProgress,
             setTranscript: (transcript: Transcript) => setTranscript(transcript.toChat()),
             editor,
+            CompletionsClient: config => new SourcegraphBrowserCompletionsClient(config),
         }).then(setClient, setClient)
     }, [config])
 

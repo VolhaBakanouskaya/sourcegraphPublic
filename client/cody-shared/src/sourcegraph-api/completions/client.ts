@@ -1,3 +1,4 @@
+import { ClientInitConfig } from '../../chat/client'
 import { ConfigurationWithAccessToken } from '../../configuration'
 
 import { Event, CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
@@ -12,17 +13,14 @@ export interface CompletionLogger {
           }
 }
 
-export type Config = Pick<
-    ConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
->
+export type CompletionsClientConfig = ClientInitConfig & Pick<ConfigurationWithAccessToken, 'debugEnable'>
 
 export abstract class SourcegraphCompletionsClient {
     private errorEncountered = false
 
-    constructor(protected config: Config, protected logger?: CompletionLogger) {}
+    constructor(protected config: CompletionsClientConfig, protected logger?: CompletionLogger) {}
 
-    public onConfigurationChange(newConfig: Config): void {
+    public onConfigurationChange(newConfig: CompletionsClientConfig): void {
         this.config = newConfig
     }
 

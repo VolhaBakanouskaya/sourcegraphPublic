@@ -23,6 +23,7 @@ import {
 // Server: shutdown response
 // Client: exit notification
 // (-- Server process exited; session ends --)
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Requests = {
     // Client -> Server
     initialize: [ClientInfo, ServerInfo]
@@ -46,6 +47,7 @@ export type Requests = {
     'editor/replaceSelection': [ReplaceSelectionParams, ReplaceSelectionResult]
 }
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Notifications = {
     // Client -> Server
     initialized: [void]

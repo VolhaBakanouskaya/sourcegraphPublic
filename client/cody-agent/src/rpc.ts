@@ -59,7 +59,7 @@ export class MessageDecoder extends Writable {
         super()
     }
 
-    _write(chunk: Buffer, encoding: string, callback: (error?: Error | null) => void) {
+    public _write(chunk: Buffer, encoding: string, callback: (error?: Error | null) => void): void {
         this.buffer = Buffer.concat([this.buffer, chunk])
 
         // We loop through as we could have a double message that requires processing twice
@@ -73,7 +73,7 @@ export class MessageDecoder extends Writable {
                 // We create this as we might get partial messages
                 // so we only want to set the content length
                 // once we get the whole thing
-                let newContentLength: number = 0
+                let newContentLength = 0
 
                 while ((endIndex = headerString.indexOf('\r\n', startIndex)) !== -1) {
                     const entry = headerString.slice(startIndex, endIndex)
@@ -92,7 +92,7 @@ export class MessageDecoder extends Writable {
 
                     switch (headerName) {
                         case 'Content-Length':
-                            newContentLength = parseInt(headerValue)
+                            newContentLength = parseInt(headerValue, 10)
                             break
 
                         default:
@@ -111,8 +111,8 @@ export class MessageDecoder extends Writable {
                         this.contentBuffer = Buffer.alloc(0)
                         this.contentLengthRemaining = null
                         this.callback(null, data)
-                    } catch (err) {
-                        this.callback(err, null)
+                    } catch (error) {
+                        this.callback(error, null)
                     }
 
                     continue
@@ -133,11 +133,7 @@ export class MessageDecoder extends Writable {
 export class MessageEncoder extends Readable {
     private buffer: Buffer = Buffer.alloc(0)
 
-    constructor() {
-        super()
-    }
-
-    send(data: any) {
+    public send(data: any): void {
         this.pause()
 
         const content = Buffer.from(JSON.stringify(data), 'utf-8')
@@ -147,7 +143,7 @@ export class MessageEncoder extends Readable {
         this.resume()
     }
 
-    _read(size: number) {
+    public _read(size: number): void {
         this.push(this.buffer.slice(0, size))
         this.buffer = this.buffer.slice(size)
     }
@@ -157,17 +153,19 @@ type RequestCallback<M extends RequestMethod> = (params: ParamsOf<M>) => Promise
 type NotificationCallback<M extends NotificationMethod> = (params: ParamsOf<M>) => Promise<void>
 
 export class MessageHandler {
-    private id: number = 0
+    private id = 0
     private requestHandlers: Map<RequestMethod, RequestCallback<any>> = new Map()
     private notificationHandlers: Map<NotificationMethod, NotificationCallback<any>> = new Map()
-    private responseHandlers: Map<Id, Function> = new Map()
+    private responseHandlers: Map<Id, (params: any) => void> = new Map()
 
     // TODO: RPC error handling
     public messageDecoder: MessageDecoder = new MessageDecoder((err: Error | null, msg: Message | null) => {
         if (err) {
             console.error(`Error: ${err}`)
         }
-        if (!msg) return
+        if (!msg) {
+            return
+        }
 
         if (msg.id !== undefined && msg.method) {
             if (typeof msg.id === 'number' && msg.id > this.id) {
@@ -175,32 +173,39 @@ export class MessageHandler {
             }
 
             // Requests have ids and methods
-            const cb = this.requestHandlers.get(msg.method)
-            if (cb) {
-                cb(msg.params).then(result => {
-                    this.messageEncoder.send({
-                        jsonrpc: '2.0',
-                        id: msg.id,
-                        result,
-                    } as ResponseMessage<any>)
-                })
+            const handler = this.requestHandlers.get(msg.method)
+            if (handler) {
+                handler(msg.params).then(
+                    result => {
+                        const data: ResponseMessage<any> = {
+                            jsonrpc: '2.0',
+                            id: msg.id,
+                            result,
+                        }
+                        this.messageEncoder.send(data)
+                    },
+                    () => {}
+                )
             } else {
                 console.error(`No handler for request with method ${msg.method}`)
             }
         } else if (msg.id !== undefined) {
             // Responses have ids
-            const cb = this.responseHandlers.get(msg.id)
-            if (cb) {
-                cb(msg.result)
+            const handler = this.responseHandlers.get(msg.id)
+            if (handler) {
+                handler(msg.result)
                 this.responseHandlers.delete(msg.id)
             } else {
                 console.error(`No handler for response with id ${msg.id}`)
             }
         } else if (msg.method) {
             // Notifications have methods
-            const cb = this.notificationHandlers.get(msg.method)
-            if (cb) {
-                cb(msg.params)
+            const handler = this.notificationHandlers.get(msg.method)
+            if (handler) {
+                handler(msg.params).then(
+                    () => {},
+                    () => {}
+                )
             } else {
                 console.error(`No handler for notification with method ${msg.method}`)
             }
@@ -209,34 +214,36 @@ export class MessageHandler {
 
     public messageEncoder: MessageEncoder = new MessageEncoder()
 
-    public registerRequest<M extends RequestMethod>(method: M, callback: RequestCallback<M>) {
+    public registerRequest<M extends RequestMethod>(method: M, callback: RequestCallback<M>): void {
         this.requestHandlers.set(method, callback)
     }
 
-    public registerNotification<M extends NotificationMethod>(method: M, callback: NotificationCallback<M>) {
+    public registerNotification<M extends NotificationMethod>(method: M, callback: NotificationCallback<M>): void {
         this.notificationHandlers.set(method, callback)
     }
 
     public request<M extends RequestMethod>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
         const id = this.id++
 
-        this.messageEncoder.send({
+        const data: RequestMessage<M> = {
             jsonrpc: '2.0',
             id,
-            method: method,
+            method,
             params,
-        } as RequestMessage<M>)
+        }
+        this.messageEncoder.send(data)
 
         return new Promise(resolve => {
             this.responseHandlers.set(id, resolve)
         })
     }
 
-    public notify<M extends NotificationMethod>(method: M, params: ParamsOf<M>) {
-        this.messageEncoder.send({
+    public notify<M extends NotificationMethod>(method: M, params: ParamsOf<M>): void {
+        const data: NotificationMessage<M> = {
             jsonrpc: '2.0',
-            method: method,
+            method,
             params,
-        } as NotificationMessage<M>)
+        }
+        this.messageEncoder.send(data)
     }
 }
