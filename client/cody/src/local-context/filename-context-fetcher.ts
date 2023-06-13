@@ -27,7 +27,7 @@ export class FilenameContextFetcher {
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const time0 = performance.now()
 
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootPath = await this.editor.getWorkspaceRootPath()
         if (!rootPath) {
             return []
         }

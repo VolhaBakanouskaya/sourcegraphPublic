@@ -374,7 +374,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async updateCodebaseContext(): Promise<void> {
-        if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
+        if (!(await this.editor.getActiveTextEditor()) && vscode.window.visibleTextEditors.length !== 0) {
             // these are ephemeral
             return
         }
@@ -658,7 +658,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 },
             })
         }
-        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(async () => await send()))
+        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         return send()
     }
 
