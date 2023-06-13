@@ -159,18 +159,21 @@ export const useClient = ({
         [setScopeState]
     )
 
-    const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
+    const activeEditorPromise = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
 
-    const codebases: string[] = useMemo(() => {
+    const codebasesPromise: Promise<string[]> = useMemo(async () => {
+        const activeEditor = await activeEditorPromise
         const repos = [...scope.repositories]
+
         if (scope.includeInferredRepository && activeEditor?.repoName) {
             repos.push(activeEditor.repoName)
         }
 
         return repos
-    }, [scope, activeEditor])
+    }, [scope, activeEditorPromise])
 
     const codebaseIds: Promise<string[]> = useMemo(async () => {
+        const codebases = await codebasesPromise
         if (!codebases.length) {
             return []
         }
@@ -184,7 +187,7 @@ export const useClient = ({
         }
 
         return results.map(({ id }) => id)
-    }, [codebases, graphqlClient])
+    }, [codebasesPromise, graphqlClient])
 
     const executeRecipe = useCallback(
         async (
@@ -200,10 +203,10 @@ export const useClient = ({
                 return Promise.resolve(null)
             }
 
-            const repoNames = [...codebases]
+            const repoNames = [...(await codebasesPromise)]
             const repoIds = [...(await codebaseIds)]
             const editor = options?.scope?.editor || (scope.includeInferredFile ? scope.editor : new NoopEditor())
-            const activeEditor = editor.getActiveTextEditor()
+            const activeEditor = await editor.getActiveTextEditor()
             if (activeEditor?.repoName && !repoNames.includes(activeEditor.repoName)) {
                 // NOTE(naman): We allow users to disable automatic inferrence of current file & repo
                 // using `includeInferredFile` and `includeInferredRepository` options. But for editor recipes
@@ -302,7 +305,7 @@ export const useClient = ({
         [
             config,
             scope,
-            codebases,
+            codebasesPromise,
             codebaseIds,
             graphqlClient,
             transcript,

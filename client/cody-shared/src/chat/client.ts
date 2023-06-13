@@ -5,7 +5,6 @@ import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselec
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
-import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 

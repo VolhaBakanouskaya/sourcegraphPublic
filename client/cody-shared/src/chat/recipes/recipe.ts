@@ -19,6 +19,7 @@ export type RecipeID =
     | 'explain-code-detailed'
     | 'explain-code-high-level'
     | 'file-touch'
+    | 'file-flow'
     | 'find-code-smells'
     | 'fixup'
     | 'generate-docstring'

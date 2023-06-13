@@ -66,7 +66,6 @@ public class CodyAgent {
                 "/Users/olafurpg/dev/sourcegraph/sourcegraph/client/cody-agent/dist/agent.js")
             .redirectError(ProcessBuilder.Redirect.INHERIT)
             .start();
-    System.out.println("AGENT_DEBUG " + tracePath);
     OutputStream traceOutputStream =
         Files.newOutputStream(
             tracePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -88,7 +87,6 @@ public class CodyAgent {
           ServerInfo info = null;
           try {
             info = server.initialize(new ClientInfo("JetBrains")).get();
-            System.out.println("SERVER_INFO " + info.name);
             server.initialized();
             List<RecipeInfo> recipes = server.recipesList().get();
             System.out.println("RECIPES " + recipes);

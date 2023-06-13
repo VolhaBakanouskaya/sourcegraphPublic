@@ -20,7 +20,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 /** ======================================================
  * Recipe for Generating a New File
 ====================================================== **/
-export class FileFlow implements Recipe {
+export class FileTouch implements Recipe {
     public id: RecipeID = 'file-flow'
     public title = 'Generate a new file'
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri

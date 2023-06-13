@@ -6,7 +6,7 @@ export function withPreselectedOptions(editor: Editor, preselectedOptions: Prefi
     const proxy = new Proxy<Editor>(editor, {
         get(target: Editor, property: string, receiver: unknown) {
             if (property === 'showQuickPick') {
-                return async function showQuickPick(options: string[]): Promise<string | undefined> {
+                return async function showQuickPick(options: string[]): Promise<string | null> {
                     for (const [preselectedOption, selectedOption] of preselectedOptions) {
                         if (preselectedOption === options) {
                             return Promise.resolve(selectedOption)
