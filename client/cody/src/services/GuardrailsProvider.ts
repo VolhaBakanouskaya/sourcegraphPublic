@@ -6,7 +6,7 @@ export class GuardrailsProvider {
     constructor(private client: Guardrails, private editor: Editor) {}
 
     public async debugEditorSelection(): Promise<void> {
-        const snippet = this.editor.getActiveTextEditorSelection()?.selectedText
+        const snippet = (await this.editor.getActiveTextEditorSelection())?.selectedText
         if (snippet === undefined) {
             return
         }

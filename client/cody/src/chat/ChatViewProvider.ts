@@ -847,7 +847,7 @@ export async function getCodebaseContext(
     chatClient: ChatClient
 ): Promise<CodebaseContext | null> {
     const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
+    const workspaceRoot = await editor.getWorkspaceRootPath()
     if (!workspaceRoot) {
         return null
     }
