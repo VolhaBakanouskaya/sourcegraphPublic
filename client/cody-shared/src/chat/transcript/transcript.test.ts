@@ -222,7 +222,7 @@ describe('Transcript', () => {
 
     it('includes currently visible content from the editor', async () => {
         const editor = new MockEditor({
-            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+            getActiveTextEditorVisibleContent: async () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
         })
         const embeddings = new MockEmbeddingsClient({
             search: async () =>
@@ -278,7 +278,7 @@ describe('Transcript', () => {
 
     it('does not include currently visible content from the editor if no codebase context is required', async () => {
         const editor = new MockEditor({
-            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+            getActiveTextEditorVisibleContent: async () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
 
