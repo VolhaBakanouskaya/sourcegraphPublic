@@ -300,7 +300,7 @@ class CodyToolWindowContent implements UpdatableChat {
     new Thread(
             () -> {
               try {
-                chat.sendMessage(humanMessage, responsePrefix, this); // TODO: Use prefix
+                chat.sendMessage(humanMessage, responsePrefix, this);
               } catch (Exception e) {
                 e.printStackTrace();
               }

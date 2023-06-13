@@ -29,6 +29,7 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/cody-shared",
+        "//:node_modules/@types/node",
     ],
 )
 

@@ -1,6 +1,7 @@
 package com.sourcegraph.agent;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.agent.protocol.*;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -25,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class CodyAgent {
   // TODO: actually stop the agent based on application lifecycle events
+  public static Logger logger = Logger.getInstance(CodyAgent.class);
 
   private CodyAgentClient client;
   public static final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -52,27 +54,37 @@ public class CodyAgent {
     try {
       CodyAgent.run(client);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.error("unable to start Cody agent", e);
     }
     ApplicationManager.getApplication().getService(CodyAgent.class).client = client;
   }
 
   public static Future<Void> run(CodyAgentClient client)
       throws IOException, ExecutionException, InterruptedException {
-    Path tracePath = Paths.get(System.getenv("HOME"), ".sourcegraph", "agent-jsonrpc.json");
     Process process =
         new ProcessBuilder(
                 "/Users/olafurpg/.asdf/shims/node",
                 "/Users/olafurpg/dev/sourcegraph/sourcegraph/client/cody-agent/dist/agent.js")
             .redirectError(ProcessBuilder.Redirect.INHERIT)
             .start();
-    OutputStream traceOutputStream =
-        Files.newOutputStream(
-            tracePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    PrintWriter traceWriter = null;
+    String tracePath = System.getProperty("cody-agent.trace-path", "");
+    if (!tracePath.isEmpty()) {
+      Path trace = Paths.get(tracePath);
+      try {
+        Files.createDirectories(trace.getParent());
+        traceWriter =
+            new PrintWriter(
+                Files.newOutputStream(
+                    trace, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
+      } catch (IOException e) {
+        logger.error("unable to trace JSON-RPC debugging information to path " + tracePath, e);
+      }
+    }
     Launcher<CodyAgentServer> launcher =
         new Launcher.Builder<CodyAgentServer>()
             .setRemoteInterface(CodyAgentServer.class)
-            .traceMessages(new PrintWriter(traceOutputStream))
+            .traceMessages(traceWriter)
             .setExecutorService(executorService)
             .setInput(process.getInputStream())
             .setOutput(process.getOutputStream())
@@ -84,23 +96,12 @@ public class CodyAgent {
     // Very ugly, but sorta works, for now...
     executorService.submit(
         () -> {
-          ServerInfo info = null;
           try {
-            info = server.initialize(new ClientInfo("JetBrains")).get();
+            ServerInfo info = server.initialize(new ClientInfo("JetBrains")).get();
+            logger.info("connected to Cody agent " + info.name);
             server.initialized();
-            List<RecipeInfo> recipes = server.recipesList().get();
-            System.out.println("RECIPES " + recipes);
-            server
-                .recipesExecute(
-                    new ExecuteRecipeParams()
-                        .setId("chat-question")
-                        .setHumanChatInput("Hello!")
-                        .setContext(
-                            new StaticRecipeContext(
-                                new StaticEditor("/Users/olafurpg/dev/spotify/dns-java"))))
-                .get();
           } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed to send 'initialize' JSON-RPC request Cody agent", e);
           }
         });
 

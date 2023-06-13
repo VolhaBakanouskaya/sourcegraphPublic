@@ -96,8 +96,10 @@ tasks {
         })
     }
 
+
     runIde {
         jvmArgs("-Djdk.module.illegalAccess.silent=true")
+        systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
     }
 
     // Configure UI tests plugin

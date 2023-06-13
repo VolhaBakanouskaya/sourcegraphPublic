@@ -48,11 +48,13 @@ public class CodyAgentClient {
 
   @JsonRequest("editor/quickPick")
   public CompletableFuture<List<String>> editorQuickPick(List<String> params) {
+    // TODO
     return CompletableFuture.completedFuture(null);
   }
 
   @JsonRequest("editor/prompt")
   public CompletableFuture<String> editorPrompt(String params) {
+    // TODO
     return CompletableFuture.completedFuture(null);
   }
 
@@ -95,6 +97,7 @@ public class CodyAgentClient {
 
   @JsonRequest("editor/selectionOrEntireFile")
   public CompletableFuture<ActiveTextEditorSelection> editorActiveOrEntireFile() {
+    // TODO
     return CompletableFuture.completedFuture(null);
   }
 
@@ -117,17 +120,20 @@ public class CodyAgentClient {
 
   @JsonRequest("intent/isCodebaseContextRequired")
   public CompletableFuture<Boolean> intentIsCodebaseContextRequired(String params) {
+    // TODO
     return CompletableFuture.completedFuture(false);
   }
 
   @JsonRequest("intent/isEditorContextRequired")
   public CompletableFuture<Boolean> intentIsEditorContextRequired(String params) {
+    // TODO
     return CompletableFuture.completedFuture(false);
   }
 
   @JsonRequest("editor/replaceSelection")
   public CompletableFuture<ReplaceSelectionResult> editorReplaceSelection(
       ReplaceSelectionParams params) {
+    // TODO
     return CompletableFuture.completedFuture(null);
   }
 
